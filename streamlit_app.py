@@ -1,7 +1,6 @@
 import streamlit as st
 from crewai import Agent, Task, Crew, Process
 import os
-# Импортируем модуль для работы с Gemini
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 # Оформление в стиле КазНУ им. Аль-Фараби
@@ -17,7 +16,10 @@ api_key = st.secrets.get("GOOGLE_API_KEY")
 if not api_key:
     st.error("Ошибка: Настройте GOOGLE_API_KEY в Settings -> Secrets!")
     st.stop()
+
+# Прописываем ключи в переменные окружения
 os.environ["GOOGLE_API_KEY"] = api_key
+os.environ["OPENAI_API_KEY"] = "NA"  # <--- ТОТ САМЫЙ ТРЮК-ОБМАНКА ДЛЯ CREWAI
 
 # Инициализируем LLM модель Gemini
 gemini_llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=api_key)
@@ -42,18 +44,20 @@ if st.button("🚀 Начать дебаты"):
     if user_thesis:
         with st.spinner("Идет заседание совета..."):
             try:
-                # Инициализация агентов (ТЕПЕРЬ С GEMINI)
+                # Инициализация агентов
                 presenter = Agent(
                     role=r1, goal=g1,
                     backstory="Вы — эксперт в области фундаментальной науки. Ваша карьера зависит от защиты этого тезиса.",
-                    llm=gemini_llm,  # <--- Подключаем Gemini
-                    verbose=True
+                    llm=gemini_llm,
+                    verbose=True,
+                    allow_delegation=False
                 )
                 critic = Agent(
                     role=r2, goal=g2,
                     backstory="Вы — сторонник строгой верификации и методологии. Вы не пропускаете слабые исследования.",
-                    llm=gemini_llm,  # <--- Подключаем Gemini
-                    verbose=True
+                    llm=gemini_llm,
+                    verbose=True,
+                    allow_delegation=False
                 )
 
                 # Задачи
@@ -73,7 +77,7 @@ if st.button("🚀 Начать дебаты"):
 
                 st.success("✅ Заседание завершено!")
                 st.markdown("### 📜 Итоговое заключение:")
-                st.info(result.raw) # Добавлено .raw для корректного вывода текста
+                st.info(result.raw if hasattr(result, 'raw') else str(result))
             except Exception as e:
                 st.error(f"Ошибка выполнения: {e}")
     else:
