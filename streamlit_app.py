@@ -1,6 +1,8 @@
 import streamlit as st
 from crewai import Agent, Task, Crew, Process
 import os
+# Импортируем модуль для работы с Gemini
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 # Оформление в стиле КазНУ им. Аль-Фараби
 st.set_page_config(page_title="СРС №2 - Артур Шакиев", layout="wide")
@@ -16,6 +18,9 @@ if not api_key:
     st.error("Ошибка: Настройте GOOGLE_API_KEY в Settings -> Secrets!")
     st.stop()
 os.environ["GOOGLE_API_KEY"] = api_key
+
+# Инициализируем LLM модель Gemini
+gemini_llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
 
 # --- ЗОНА 1: Конфигурация Агентов ---
 st.sidebar.header("⚙️ Ученый совет")
@@ -37,23 +42,25 @@ if st.button("🚀 Начать дебаты"):
     if user_thesis:
         with st.spinner("Идет заседание совета..."):
             try:
-                # Инициализация агентов
+                # Инициализация агентов (ТЕПЕРЬ С GEMINI)
                 presenter = Agent(
                     role=r1, goal=g1,
                     backstory="Вы — эксперт в области фундаментальной науки. Ваша карьера зависит от защиты этого тезиса.",
+                    llm=gemini_llm,  # <--- Подключаем Gemini
                     verbose=True
                 )
                 critic = Agent(
                     role=r2, goal=g2,
                     backstory="Вы — сторонник строгой верификации и методологии. Вы не пропускаете слабые исследования.",
+                    llm=gemini_llm,  # <--- Подключаем Gemini
                     verbose=True
                 )
 
                 # Задачи
                 t1 = Task(description=f"Напишите развернутый доклад по тезису: {user_thesis}. Приведите 3 аргумента 'ЗА'.",
-                          agent=presenter, expected_output="Научный доклад.")
+                          agent=presenter, expected_output="Научный доклад на русском языке.")
                 t2 = Task(description="Проанализируйте доклад, укажите на его слабые места и вынесите вердикт совета (Одобрено/Отклонено).",
-                          agent=critic, expected_output="Критический отзыв и вердикт.")
+                          agent=critic, expected_output="Критический отзыв и вердикт на русском языке.")
 
                 # Сборка Crew
                 debate_crew = Crew(
@@ -66,7 +73,7 @@ if st.button("🚀 Начать дебаты"):
 
                 st.success("✅ Заседание завершено!")
                 st.markdown("### 📜 Итоговое заключение:")
-                st.info(result)
+                st.info(result.raw) # Добавлено .raw для корректного вывода текста
             except Exception as e:
                 st.error(f"Ошибка выполнения: {e}")
     else:
