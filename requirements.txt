@@ -1,5 +1,4 @@
 streamlit
-setuptools
-crewai==0.30.11
+crewai
 langchain-google-genai
-pydantic>=2.4.2
+pydantic
