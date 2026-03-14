@@ -1,4 +1,4 @@
-crewai
 streamlit
-langchain_google_genai
-pydantic
+crewai==0.28.8
+langchain-google-genai
+pydantic==2.6.4
