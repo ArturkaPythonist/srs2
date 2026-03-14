@@ -1,7 +1,6 @@
 import streamlit as st
 from crewai import Agent, Task, Crew, Process
 import os
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 # Оформление в стиле КазНУ им. Аль-Фараби
 st.set_page_config(page_title="СРС №2 - Артур Шакиев", layout="wide")
@@ -11,18 +10,14 @@ st.markdown("---")
 st.write("**Выполнил:** Артур Шакиев")
 st.write("**Тема:** Программная реализация алгоритмов взаимодействия и обмена данными (Вариант 13)")
 
-# Настройка ключа через Secrets
-api_key = st.secrets.get("GOOGLE_API_KEY")
+# Настройка ключа OpenAI через Secrets
+api_key = st.secrets.get("OPENAI_API_KEY")
 if not api_key:
-    st.error("Ошибка: Настройте GOOGLE_API_KEY в Settings -> Secrets!")
+    st.error("Ошибка: Настройте OPENAI_API_KEY в Settings -> Secrets!")
     st.stop()
 
-# Прописываем ключи в переменные окружения
-os.environ["GOOGLE_API_KEY"] = api_key
-os.environ["OPENAI_API_KEY"] = "NA"  # <--- ТОТ САМЫЙ ТРЮК-ОБМАНКА ДЛЯ CREWAI
-
-# Инициализируем LLM модель Gemini
-gemini_llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=api_key)
+# Передаем ключ в переменные окружения, CrewAI найдет его сам
+os.environ["OPENAI_API_KEY"] = api_key
 
 # --- ЗОНА 1: Конфигурация Агентов ---
 st.sidebar.header("⚙️ Ученый совет")
@@ -44,18 +39,16 @@ if st.button("🚀 Начать дебаты"):
     if user_thesis:
         with st.spinner("Идет заседание совета..."):
             try:
-                # Инициализация агентов
+                # Инициализация агентов (Без параметра llm, используется OpenAI по умолчанию)
                 presenter = Agent(
                     role=r1, goal=g1,
                     backstory="Вы — эксперт в области фундаментальной науки. Ваша карьера зависит от защиты этого тезиса.",
-                    llm=gemini_llm,
                     verbose=True,
                     allow_delegation=False
                 )
                 critic = Agent(
                     role=r2, goal=g2,
                     backstory="Вы — сторонник строгой верификации и методологии. Вы не пропускаете слабые исследования.",
-                    llm=gemini_llm,
                     verbose=True,
                     allow_delegation=False
                 )
