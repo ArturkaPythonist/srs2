@@ -2,87 +2,85 @@ import streamlit as st
 from crewai import Agent, Task, Crew, Process
 import os
 
-# Настройка страницы в стиле КазНУ
-st.set_page_config(page_title="Academic Debate AI - Variant 13", page_icon="🎓", layout="wide")
+# Оформление в стиле СРС КазНУ [cite: 1, 2, 9]
+st.set_page_config(page_title="CPC 2 - Elmuratov M.", layout="wide")
 
-st.title("🎓 Симуляция дебатов ученого совета")
-st.info("Разработка студента: [Твое Имя] | Вариант 13")
+st.title("🎓 Виртуальная симуляция дебатов ученого совета")
+st.write("---")
+st.write("**Выполнил:** Студент кафедры «Компьютерных наук» Элмуратов М. [cite: 9, 12]")
+st.write("**Тема:** Программная реализация алгоритмов взаимодействия и обмена данными (Вариант 13) [cite: 11]")
 
-# Настройка API ключа
-# На Streamlit Cloud добавь его в Settings -> Secrets
-api_key = st.secrets.get("GOOGLE_API_KEY") or os.getenv("GOOGLE_API_KEY")
+# Настройка API ключа через Secrets Streamlit
+api_key = st.secrets.get("GOOGLE_API_KEY")
 
 if not api_key:
-    st.error("Критическая ошибка: GOOGLE_API_KEY не найден в секретах приложения!")
+    st.error("Критическая ошибка: Введите GOOGLE_API_KEY в Settings -> Secrets приложения.")
     st.stop()
 
 os.environ["GOOGLE_API_KEY"] = api_key
 
-# --- ЗОНА 1: Конфигурация (Боковая панель) ---
-st.sidebar.header("⚙️ Конфигурация МАС")
-
-with st.sidebar.expander("Агент: Докладчик"):
-    r1 = st.text_input("Role", "Ведущий исследователь")
-    g1 = st.text_area("Goal", "Аргументированно защитить научную гипотезу")
+# --- ЗОНА 1: Конфигурация Агентов ---
+st.sidebar.header("⚙️ Настройки Совета")
+with st.sidebar.expander("Агент: Ученый-докладчик"):
+    a1_role = st.text_input("Role", "Ведущий исследователь")
+    a1_goal = st.text_input("Goal", "Защитить научный тезис")
 
 with st.sidebar.expander("Агент: Оппонент"):
-    r2 = st.text_input("Role", "Скептичный рецензент")
-    g2 = st.text_area("Goal", "Найти уязвимости в защите и вынести вердикт")
+    a2_role = st.text_input("Role", "Скептичный рецензент")
+    a2_goal = st.text_input("Goal", "Провести критический анализ тезиса")
 
-# --- ЗОНА 2: Ввод данных ---
-st.subheader("🔬 Тезис для обсуждения")
-user_thesis = st.text_area("Введите гипотезу (например: 'Внедрение безусловного дохода приведет к росту ВВП'):",
-                           placeholder="Введите текст тезиса здесь...")
+# --- ЗОНА 2: Ввод тезиса ---
+st.subheader("📝 Предмет научной дискуссии")
+scientific_thesis = st.text_area("Введите гипотезу для дебатов:",
+                                 placeholder="Пример: Внедрение квантовых вычислений в криптографию...")
 
-# --- ЗОНА 3: Выполнение ---
-if st.button("🚀 Запустить дебаты"):
-    if not user_thesis:
-        st.warning("Сначала введите тезис!")
-    else:
-        with st.spinner("Идет заседание совета..."):
+# --- ЗОНА 3: Запуск МАС ---
+if st.button("🚀 Начать дебаты"):
+    if scientific_thesis:
+        with st.spinner("Агенты ведут дискуссию..."):
             try:
-                # Инициализация агентов
+                # Создание агентов [cite: 28]
                 presenter = Agent(
-                    role=r1,
-                    goal=g1,
-                    backstory="Вы — профессор с мировым именем, ваша репутация зависит от успешной защиты этой идеи.",
-                    llm="gemini/gemini-1.5-flash",
+                    role=a1_role,
+                    goal=a1_goal,
+                    backstory="Вы выдающийся ученый, защищающий свою работу перед советом.",
                     verbose=True
                 )
 
                 critic = Agent(
-                    role=r2,
-                    goal=g2,
-                    backstory="Вы — главный критик академии. Ваша цель — не допустить публикации слабых и непроверенных теорий.",
-                    llm="gemini/gemini-1.5-flash",
+                    role=a2_role,
+                    goal=a2_goal,
+                    backstory="Вы официальный оппонент. Ваша задача — найти уязвимости в логике.",
                     verbose=True
                 )
 
-                # Задачи
-                t1 = Task(
-                    description=f"Подготовь научный доклад в защиту тезиса: {user_thesis}. Используй 3 логических аргумента.",
+                # Определение задач
+                task1 = Task(
+                    description=f"Подготовь подробный доклад в защиту тезиса: {scientific_thesis}.",
                     agent=presenter,
-                    expected_output="Текст доклада с аргументацией."
+                    expected_output="Развернутый научный доклад."
                 )
 
-                t2 = Task(
-                    description="Проанализируй доклад. Найди 2 слабых места и напиши финальное решение: 'Одобрено' или 'Отклонено' с объяснением.",
+                task2 = Task(
+                    description="Проанализируй доклад, найди 3 критических замечания и вынеси итоговое решение.",
                     agent=critic,
-                    expected_output="Критическая рецензия и итоговый вердикт."
+                    expected_output="Критическая рецензия и вердикт совета."
                 )
 
-                # Запуск процесса
-                crew = Crew(
+                # Сборка экипажа
+                debate_crew = Crew(
                     agents=[presenter, critic],
-                    tasks=[t1, t2],
+                    tasks=[task1, task2],
                     process=Process.sequential
                 )
 
-                result = crew.kickoff()
+                result = debate_crew.kickoff()
 
-                st.success("✅ Анализ завершен!")
-                st.markdown("### 📜 Протокол заседания:")
-                st.markdown(result.raw)
+                st.success("✅ Заседание завершено!")
+                st.markdown("### 📜 Итоговый протокол:")
+                st.info(result)
 
             except Exception as e:
-                st.error(f"Ошибка выполнения: {str(e)}")
+                st.error(f"Произошла ошибка: {str(e)}")
+    else:
+        st.warning("Введите тему дебатов!")

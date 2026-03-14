@@ -1,4 +1,6 @@
 streamlit
-crewai==0.28.8
+crewai==0.30.11
 langchain-google-genai
-pydantic==2.6.4
+pydantic>=2.4.2
+pydantic-settings>=2.0.3
+typing-extensions>=4.8.0
