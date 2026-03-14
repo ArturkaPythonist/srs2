@@ -1,92 +1,88 @@
 import streamlit as st
 from crewai import Agent, Task, Crew, Process
-
-# Настройка страницы
-st.set_page_config(page_title="Academic Debate AI (V13)", page_icon="🎓", layout="wide")
-
-# Проверка API ключа в Secrets (для Streamlit Cloud) или в переменной окружения
 import os
 
-api_key = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+# Настройка страницы в стиле КазНУ
+st.set_page_config(page_title="Academic Debate AI - Variant 13", page_icon="🎓", layout="wide")
 
-st.title("🎓 Виртуальная симуляция дебатов ученого совета")
-st.markdown("Вариант 13: Система генерации и критики научных тезисов.")
+st.title("🎓 Симуляция дебатов ученого совета")
+st.info("Разработка студента: [Твое Имя] | Вариант 13")
 
-# --- ЗОНА 1: Конфигурация агентов (Боковая панель) ---
-st.sidebar.header("⚙️ Настройка Ученого Совета")
+# Настройка API ключа
+# На Streamlit Cloud добавь его в Settings -> Secrets
+api_key = st.secrets.get("GOOGLE_API_KEY") or os.getenv("GOOGLE_API_KEY")
 
-with st.sidebar.expander("Агент 1: Докладчик (Защита)", expanded=False):
-    a1_role = st.text_input("Role", "Ведущий исследователь", key="r1")
-    a1_goal = st.text_area("Goal", "Привести веские научные аргументы в пользу гипотезы", key="g1")
-    a1_backstory = st.text_area("Backstory", "Вы профессор с 20-летним стажем, защищающий инновационный подход.",
-                                key="b1")
+if not api_key:
+    st.error("Критическая ошибка: GOOGLE_API_KEY не найден в секретах приложения!")
+    st.stop()
 
-with st.sidebar.expander("Агент 2: Оппонент (Критика)", expanded=False):
-    a2_role = st.text_input("Role", "Скептичный рецензент", key="r2")
-    a2_goal = st.text_area("Goal", "Найти слабые места в логике и потребовать доказательств", key="g2")
-    a2_backstory = st.text_area("Backstory", "Вы эксперт по научной методологии, который не терпит пустых слов.",
-                                key="b2")
+os.environ["GOOGLE_API_KEY"] = api_key
+
+# --- ЗОНА 1: Конфигурация (Боковая панель) ---
+st.sidebar.header("⚙️ Конфигурация МАС")
+
+with st.sidebar.expander("Агент: Докладчик"):
+    r1 = st.text_input("Role", "Ведущий исследователь")
+    g1 = st.text_area("Goal", "Аргументированно защитить научную гипотезу")
+
+with st.sidebar.expander("Агент: Оппонент"):
+    r2 = st.text_input("Role", "Скептичный рецензент")
+    g2 = st.text_area("Goal", "Найти уязвимости в защите и вынести вердикт")
 
 # --- ЗОНА 2: Ввод данных ---
-st.subheader("🔬 Предмет дискуссии")
-thesis = st.text_area(
-    "Введите научную гипотезу или тему для обсуждения:",
-    placeholder="Например: Использование ИИ для диагностики редких заболеваний на ранних стадиях...",
-    height=100
-)
+st.subheader("🔬 Тезис для обсуждения")
+user_thesis = st.text_area("Введите гипотезу (например: 'Внедрение безусловного дохода приведет к росту ВВП'):",
+                           placeholder="Введите текст тезиса здесь...")
 
-# --- ЗОНА 3: Запуск и результат ---
-if st.button("🚀 Начать заседание"):
-    if not api_key:
-        st.error("Ошибка: Не найден OPENAI_API_KEY. Добавьте его в Secrets приложения.")
-    elif not thesis:
-        st.warning("Пожалуйста, введите тему для дебатов.")
+# --- ЗОНА 3: Выполнение ---
+if st.button("🚀 Запустить дебаты"):
+    if not user_thesis:
+        st.warning("Сначала введите тезис!")
     else:
-        with st.spinner("Агенты ведут научную дискуссию..."):
+        with st.spinner("Идет заседание совета..."):
             try:
-                # Настройка агентов
+                # Инициализация агентов
                 presenter = Agent(
-                    role=a1_role,
-                    goal=a1_goal,
-                    backstory=a1_backstory,
-                    allow_delegation=False,
+                    role=r1,
+                    goal=g1,
+                    backstory="Вы — профессор с мировым именем, ваша репутация зависит от успешной защиты этой идеи.",
+                    llm="gemini/gemini-1.5-flash",
                     verbose=True
                 )
 
                 critic = Agent(
-                    role=a2_role,
-                    goal=a2_goal,
-                    backstory=a2_backstory,
-                    allow_delegation=False,
+                    role=r2,
+                    goal=g2,
+                    backstory="Вы — главный критик академии. Ваша цель — не допустить публикации слабых и непроверенных теорий.",
+                    llm="gemini/gemini-1.5-flash",
                     verbose=True
                 )
 
                 # Задачи
-                task_present = Task(
-                    description=f"Подготовьте тезисное выступление в защиту идеи: {thesis}",
+                t1 = Task(
+                    description=f"Подготовь научный доклад в защиту тезиса: {user_thesis}. Используй 3 логических аргумента.",
                     agent=presenter,
-                    expected_output="Структурированный доклад с 3-4 ключевыми аргументами."
+                    expected_output="Текст доклада с аргументацией."
                 )
 
-                task_critique = Task(
-                    description=f"Проанализируйте выступление коллеги. Задайте 2 острых вопроса и сделайте вывод о научной состоятельности идеи.",
+                t2 = Task(
+                    description="Проанализируй доклад. Найди 2 слабых места и напиши финальное решение: 'Одобрено' или 'Отклонено' с объяснением.",
                     agent=critic,
-                    expected_output="Критическая рецензия и финальный вердикт совета."
+                    expected_output="Критическая рецензия и итоговый вердикт."
                 )
 
-                # Запуск Crew
+                # Запуск процесса
                 crew = Crew(
                     agents=[presenter, critic],
-                    tasks=[task_present, task_critique],
+                    tasks=[t1, t2],
                     process=Process.sequential
                 )
 
                 result = crew.kickoff()
 
-                # Отображение результата
-                st.success("✅ Заседание окончено")
-                st.markdown("### 📜 Протокол дебатов")
-                st.info(result)
+                st.success("✅ Анализ завершен!")
+                st.markdown("### 📜 Протокол заседания:")
+                st.markdown(result.raw)
 
             except Exception as e:
-                st.error(f"Произошла ошибка при работе МАС: {str(e)}")
+                st.error(f"Ошибка выполнения: {str(e)}")
