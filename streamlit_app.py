@@ -20,7 +20,7 @@ if not api_key:
 os.environ["GOOGLE_API_KEY"] = api_key
 
 # Инициализируем LLM модель Gemini
-gemini_llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+gemini_llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=api_key)
 
 # --- ЗОНА 1: Конфигурация Агентов ---
 st.sidebar.header("⚙️ Ученый совет")
