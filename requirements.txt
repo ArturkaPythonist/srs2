@@ -1,3 +1,4 @@
 streamlit
-crewai[google-genai]
-pydantic
+crewai
+langchain-google-genai
+pydantic    

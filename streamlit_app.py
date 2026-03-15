@@ -1,6 +1,7 @@
 import streamlit as st
-from crewai import Agent, Task, Crew, Process, LLM
+from crewai import Agent, Task, Crew, Process
 import os
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 # Оформление в стиле КазНУ им. Аль-Фараби
 st.set_page_config(page_title="СРС №2 - Артур Шакиев", layout="wide")
@@ -17,10 +18,15 @@ if not api_key:
     st.error("Ошибка: Настройте GOOGLE_API_KEY в Settings -> Secrets!")
     st.stop()
 
-# ЧИСТОЕ РЕШЕНИЕ: Используем официальный класс LLM от CrewAI
-gemini_llm = LLM(
-    model="gemini/gemini-1.5-flash",
-    api_key=api_key
+# 1. Записываем реальный ключ Google
+os.environ["GOOGLE_API_KEY"] = api_key
+# 2. Подсовываем фальшивый ключ OpenAI (блокируем баг CrewAI)
+os.environ["OPENAI_API_KEY"] = "sk-fake-key-for-crewai-bypass"
+
+# Инициализируем модель с правильным суффиксом -latest
+gemini_llm = ChatGoogleGenerativeAI(
+    model="gemini-1.5-flash-latest",
+    google_api_key=api_key
 )
 
 # --- ЗОНА 1: Конфигурация Агентов ---
@@ -43,18 +49,18 @@ if st.button("🚀 Начать дебаты"):
     if user_thesis:
         with st.spinner("Идет заседание совета..."):
             try:
-                # Инициализация агентов
+                # Инициализация агентов (указываем llm=gemini_llm)
                 presenter = Agent(
                     role=r1, goal=g1,
                     backstory="Вы — эксперт в области фундаментальной науки. Ваша карьера зависит от защиты этого тезиса.",
-                    llm=gemini_llm, # Передаем наш правильно настроенный LLM
+                    llm=gemini_llm,
                     verbose=True,
                     allow_delegation=False
                 )
                 critic = Agent(
                     role=r2, goal=g2,
                     backstory="Вы — сторонник строгой верификации и методологии. Вы не пропускаете слабые исследования.",
-                    llm=gemini_llm, # Передаем наш правильно настроенный LLM
+                    llm=gemini_llm,
                     verbose=True,
                     allow_delegation=False
                 )
