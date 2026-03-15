@@ -17,9 +17,10 @@ if not api_key:
     st.error("Ошибка: Настройте GOOGLE_API_KEY в Settings -> Secrets!")
     st.stop()
 
-# Инициализируем самую надежную модель: gemini-1.5-pro
+# Инициализируем классическую базовую модель (Gemini 1.0 Pro)
+# Она доступна абсолютно всем ключам без исключения
 gemini_llm = LLM(
-    model="gemini/gemini-1.5-pro",
+    model="gemini/gemini-pro",
     api_key=api_key
 )
 
@@ -62,7 +63,7 @@ if st.button("🚀 Начать дебаты"):
                 # Задачи
                 t1 = Task(description=f"Напишите развернутый доклад по тезису: {user_thesis}. Приведите 3 аргумента 'ЗА'.",
                           agent=presenter, expected_output="Научный доклад на русском языке.")
-                t2 = Task(description="Проанализируйте доклад, укажите на его слабые места и вынесите вердикт совета (Одобрено/Отклонено).",
+                t2 = Task(description="Проанализируйте доклад, укажите на его слабые места и вы вынесите вердикт совета (Одобрено/Отклонено).",
                           agent=critic, expected_output="Критический отзыв и вердикт на русском языке.")
 
                 # Сборка Crew
@@ -80,4 +81,4 @@ if st.button("🚀 Начать дебаты"):
             except Exception as e:
                 st.error(f"Ошибка выполнения: {e}")
     else:
-        st.warning("Пожалуйста, введите тему для обсуждения!") 
+        st.warning("Пожалуйста, введите тему для обсуждения!")
