@@ -60,24 +60,4 @@ if st.button("🚀 Начать дебаты"):
                 )
 
                 # Задачи
-                t1 = Task(description=f"Напишите развернутый доклад по тезису: {user_thesis}. Приведите 3 аргумента 'ЗА'.",
-                          agent=presenter, expected_output="Научный доклад на русском языке.")
-                t2 = Task(description="Проанализируйте доклад, укажите на его слабые места и вынесите вердикт совета (Одобрено/Отклонено).",
-                          agent=critic, expected_output="Критический отзыв и вердикт на русском языке.")
-
-                # Сборка Crew
-                debate_crew = Crew(
-                    agents=[presenter, critic],
-                    tasks=[t1, t2],
-                    process=Process.sequential
-                )
-
-                result = debate_crew.kickoff()
-
-                st.success("✅ Заседание завершено!")
-                st.markdown("### 📜 Итоговое заключение:")
-                st.info(result.raw if hasattr(result, 'raw') else str(result))
-            except Exception as e:
-                st.error(f"Ошибка выполнения: {e}")
-    else:
-        st.warning("Пожалуйста, введите тему для обсуждения!")
+                t1 = Task(description=f"Напишите развернутый доклад по
