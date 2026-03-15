@@ -1,9 +1,8 @@
 import streamlit as st
-from crewai import Agent, Task, Crew, Process
+from crewai import Agent, Task, Crew, Process, LLM
 import os
-from langchain_google_genai import ChatGoogleGenerativeAI
 
-# Оформление в стиле КазНУ
+# Оформление в стиле КазНУ им. Аль-Фараби
 st.set_page_config(page_title="СРС №2 - Артур Шакиев", layout="wide")
 
 st.title("🎓 Виртуальная симуляция дебатов ученого совета")
@@ -11,24 +10,17 @@ st.markdown("---")
 st.write("**Выполнил:** Артур Шакиев")
 st.write("**Тема:** Программная реализация алгоритмов взаимодействия и обмена данными (Вариант 13)")
 
-# Получаем ключ из секретов
+# Получаем ключ из секретов Streamlit
 api_key = st.secrets.get("GOOGLE_API_KEY")
 
 if not api_key:
     st.error("Ошибка: Настройте GOOGLE_API_KEY в Settings -> Secrets!")
     st.stop()
 
-# Устанавливаем ключ Google
-os.environ["GOOGLE_API_KEY"] = api_key
-
-# Убиваем любые следы OpenAI, чтобы CrewAI даже не пытался туда стучаться
-if "OPENAI_API_KEY" in os.environ:
-    del os.environ["OPENAI_API_KEY"]
-
-# Инициализируем Gemini
-llm_gemini = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash",
-    google_api_key=api_key
+# Инициализируем самую надежную модель: gemini-1.5-pro
+gemini_llm = LLM(
+    model="gemini/gemini-1.5-pro",
+    api_key=api_key
 )
 
 # --- ЗОНА 1: Конфигурация Агентов ---
@@ -51,20 +43,18 @@ if st.button("🚀 Начать дебаты"):
     if user_thesis:
         with st.spinner("Идет заседание совета..."):
             try:
-                # Инициализация агентов (Жестко привязываем Gemini ко ВСЕМ процессам)
+                # Инициализация агентов
                 presenter = Agent(
                     role=r1, goal=g1,
                     backstory="Вы — эксперт в области фундаментальной науки. Ваша карьера зависит от защиты этого тезиса.",
-                    llm=llm_gemini,
-                    function_calling_llm=llm_gemini, # <--- БЛОКИРУЕМ OPENAI
+                    llm=gemini_llm,
                     verbose=True,
                     allow_delegation=False
                 )
                 critic = Agent(
                     role=r2, goal=g2,
                     backstory="Вы — сторонник строгой верификации и методологии. Вы не пропускаете слабые исследования.",
-                    llm=llm_gemini,
-                    function_calling_llm=llm_gemini, # <--- БЛОКИРУЕМ OPENAI
+                    llm=gemini_llm,
                     verbose=True,
                     allow_delegation=False
                 )
@@ -90,4 +80,4 @@ if st.button("🚀 Начать дебаты"):
             except Exception as e:
                 st.error(f"Ошибка выполнения: {e}")
     else:
-        st.warning("Пожалуйста, введите тему для обсуждения!")
+        st.warning("Пожалуйста, введите тему для обсуждения!") 
