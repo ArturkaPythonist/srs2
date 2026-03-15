@@ -17,7 +17,7 @@ if not api_key:
     st.error("Ошибка: Настройте GOOGLE_API_KEY в Settings -> Secrets!")
     st.stop()
 
-# ЧИСТОЕ РЕШЕНИЕ: LiteLLM внутри CrewAI автоматически ищет ключ в переменной GEMINI_API_KEY
+# Передаем ключ для новой библиотеки CrewAI
 os.environ["GEMINI_API_KEY"] = api_key
 
 # --- ЗОНА 1: Конфигурация Агентов ---
@@ -40,18 +40,18 @@ if st.button("🚀 Начать дебаты"):
     if user_thesis:
         with st.spinner("Идет заседание совета..."):
             try:
-                # Инициализация агентов (указываем модель строкой через провайдера gemini/)
+                # Инициализация агентов с АКТУАЛЬНОЙ моделью Gemini 1.5 Flash
                 presenter = Agent(
                     role=r1, goal=g1,
                     backstory="Вы — эксперт в области фундаментальной науки. Ваша карьера зависит от защиты этого тезиса.",
-                    llm="gemini/gemini-pro",
+                    llm="gemini/gemini-1.5-flash",
                     verbose=True,
                     allow_delegation=False
                 )
                 critic = Agent(
                     role=r2, goal=g2,
                     backstory="Вы — сторонник строгой верификации и методологии. Вы не пропускаете слабые исследования.",
-                    llm="gemini/gemini-pro",
+                    llm="gemini/gemini-1.5-flash",
                     verbose=True,
                     allow_delegation=False
                 )
