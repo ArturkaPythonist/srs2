@@ -1,5 +1,5 @@
 import streamlit as st
-from crewai import Agent, Task, Crew, Process
+from crewai import Agent, Task, Crew, Process, LLM
 import os
 
 # Оформление в стиле КазНУ им. Аль-Фараби
@@ -17,8 +17,11 @@ if not api_key:
     st.error("Ошибка: Настройте GOOGLE_API_KEY в Settings -> Secrets!")
     st.stop()
 
-# Передаем ключ для новой библиотеки CrewAI
-os.environ["GEMINI_API_KEY"] = api_key
+# ЧИСТОЕ РЕШЕНИЕ: Используем официальный класс LLM от CrewAI
+gemini_llm = LLM(
+    model="gemini/gemini-1.5-flash",
+    api_key=api_key
+)
 
 # --- ЗОНА 1: Конфигурация Агентов ---
 st.sidebar.header("⚙️ Ученый совет")
@@ -40,18 +43,18 @@ if st.button("🚀 Начать дебаты"):
     if user_thesis:
         with st.spinner("Идет заседание совета..."):
             try:
-                # Инициализация агентов с АКТУАЛЬНОЙ моделью Gemini 1.5 Flash
+                # Инициализация агентов
                 presenter = Agent(
                     role=r1, goal=g1,
                     backstory="Вы — эксперт в области фундаментальной науки. Ваша карьера зависит от защиты этого тезиса.",
-                    llm="gemini/gemini-1.5-flash",
+                    llm=gemini_llm, # Передаем наш правильно настроенный LLM
                     verbose=True,
                     allow_delegation=False
                 )
                 critic = Agent(
                     role=r2, goal=g2,
                     backstory="Вы — сторонник строгой верификации и методологии. Вы не пропускаете слабые исследования.",
-                    llm="gemini/gemini-1.5-flash",
+                    llm=gemini_llm, # Передаем наш правильно настроенный LLM
                     verbose=True,
                     allow_delegation=False
                 )
