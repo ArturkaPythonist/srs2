@@ -3,7 +3,7 @@ from crewai import Agent, Task, Crew, Process
 import os
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-# Оформление в стиле КазНУ им. Аль-Фараби
+# Оформление в стиле КазНУ
 st.set_page_config(page_title="СРС №2 - Артур Шакиев", layout="wide")
 
 st.title("🎓 Виртуальная симуляция дебатов ученого совета")
@@ -11,21 +11,23 @@ st.markdown("---")
 st.write("**Выполнил:** Артур Шакиев")
 st.write("**Тема:** Программная реализация алгоритмов взаимодействия и обмена данными (Вариант 13)")
 
-# Получаем ключ из секретов Streamlit
+# Получаем ключ из секретов
 api_key = st.secrets.get("GOOGLE_API_KEY")
 
 if not api_key:
     st.error("Ошибка: Настройте GOOGLE_API_KEY в Settings -> Secrets!")
     st.stop()
 
-# 1. Записываем реальный ключ Google
+# Устанавливаем ключ Google
 os.environ["GOOGLE_API_KEY"] = api_key
-# 2. Подсовываем фальшивый ключ OpenAI (блокируем баг CrewAI)
-os.environ["OPENAI_API_KEY"] = "sk-fake-key-for-crewai-bypass"
 
-# Инициализируем модель с правильным суффиксом -latest
-gemini_llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash-latest",
+# Убиваем любые следы OpenAI, чтобы CrewAI даже не пытался туда стучаться
+if "OPENAI_API_KEY" in os.environ:
+    del os.environ["OPENAI_API_KEY"]
+
+# Инициализируем Gemini
+llm_gemini = ChatGoogleGenerativeAI(
+    model="gemini-1.5-flash",
     google_api_key=api_key
 )
 
@@ -49,18 +51,20 @@ if st.button("🚀 Начать дебаты"):
     if user_thesis:
         with st.spinner("Идет заседание совета..."):
             try:
-                # Инициализация агентов (указываем llm=gemini_llm)
+                # Инициализация агентов (Жестко привязываем Gemini ко ВСЕМ процессам)
                 presenter = Agent(
                     role=r1, goal=g1,
                     backstory="Вы — эксперт в области фундаментальной науки. Ваша карьера зависит от защиты этого тезиса.",
-                    llm=gemini_llm,
+                    llm=llm_gemini,
+                    function_calling_llm=llm_gemini, # <--- БЛОКИРУЕМ OPENAI
                     verbose=True,
                     allow_delegation=False
                 )
                 critic = Agent(
                     role=r2, goal=g2,
                     backstory="Вы — сторонник строгой верификации и методологии. Вы не пропускаете слабые исследования.",
-                    llm=gemini_llm,
+                    llm=llm_gemini,
+                    function_calling_llm=llm_gemini, # <--- БЛОКИРУЕМ OPENAI
                     verbose=True,
                     allow_delegation=False
                 )
